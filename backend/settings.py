@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'users',
     'books',
     'widget_tweaks',
+    'mozilla_django_oidc',
 ]
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'mozilla_django_oidc.middleware.SessionRefresh', 
 ]
 
 
@@ -133,3 +135,45 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+# --- OIDC (Keycloak) Configuration ---
+
+# Reemplaza 'bookswap-realm' si usaste un nombre diferente para tu Realm.
+# Reemplaza 'django-client' si usaste un Client ID diferente.
+# Pega aquí el Client Secret que obtuviste de Keycloak.
+
+OIDC_RP_CLIENT_ID = "django-client"
+OIDC_RP_CLIENT_SECRET = "9g7zITy5SF6K3LZBnNTat25nqsk0v8Nw"  # 
+
+OIDC_OP_AUTHORIZATION_ENDPOINT = "http://localhost:8081/realms/bookswap-realm/protocol/openid-connect/auth"
+OIDC_OP_TOKEN_ENDPOINT = "http://localhost:8081/realms/bookswap-realm/protocol/openid-connect/token"
+OIDC_OP_USER_ENDPOINT = "http://localhost:8081/realms/bookswap-realm/protocol/openid-connect/userinfo"
+OIDC_OP_JWKS_ENDPOINT = "http://localhost:8081/realms/bookswap-realm/protocol/openid-connect/certs"
+OIDC_OP_LOGOUT_ENDPOINT = "http://localhost:8081/realms/bookswap-realm/protocol/openid-connect/logout"
+
+OIDC_RP_SIGN_ALGO = "RS256"
+# URLs a las que Django debe redirigir después del login/logout
+LOGIN_URL = "oidc_authentication_init"
+LOGIN_REDIRECT_URL = "/"  # Redirige a la página principal después de un login exitoso
+LOGOUT_REDIRECT_URL = "/" # Redirige a la página principal después de un logout exitoso
+
+# Añade el backend de autenticación de OIDC
+AUTHENTICATION_BACKENDS = (
+    'users.authentication.MyOIDCAB',
+    'django.contrib.auth.backends.ModelBackend', # Mantén este si usas el admin de Django
+)
+
+# Esto crea usuarios en Django automáticamente cuando inician sesión por primera vez vía Keycloak
+OIDC_CREATE_USER = True
+OIDC_USERNAME_ALGO = lambda email: email # Usa el email como username
+
+# Mapeo de claims (atributos del token) a campos del modelo User de Django
+OIDC_RP_CLAIMS_TO_USER_MAPPING = {
+    "sub": "username",
+    "given_name": "first_name",
+    "family_name": "last_name",
+    "email": "email",
+}

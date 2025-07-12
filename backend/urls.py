@@ -24,4 +24,6 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('books/', include('books.urls')),
     path('perfil/', include('users.urls')),
+    path('oidc/', include('mozilla_django_oidc.urls')),
+
 ]
